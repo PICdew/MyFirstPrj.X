@@ -150,16 +150,14 @@ void interrupt isr(void)
     Do not use a seperate if block for each interrupt flag to avoid run
     time errors. */
     if(T0IF){// Timer Overflow, keep the value in reset
-        // Overflow during the decoding...
-        
-        if(m_ucSteps > 0){
-            m_ucAddr_1 = 0;
-            m_ucAddr_2 = 0;
-            m_ucCmd_1 = 0;
-            m_ucCmd_2 = 0;
-        }
+
         m_ucValue = 0;
         m_ucSteps = 0;
+
+        m_ucAddr_1 = 0;
+        m_ucAddr_2 = 0;
+        m_ucCmd_1 = 0;
+        m_ucCmd_2 = 0;
 
 //        GP4 = ~GP4;  
         TMR0 = 0;
@@ -176,6 +174,8 @@ void interrupt isr(void)
                 if((m_ucTMR0 >= 68) && (m_ucTMR0 <= 72)){// New command
                     m_ucSteps++;
                     //GP4 = ~GP4;   
+                    m_ucCmd_1++;
+                    m_ucCmd_2++;
                 }
             }
 
@@ -183,70 +183,92 @@ void interrupt isr(void)
                 // 152 center to 2260 microSecs Key <<
                 if((m_ucTMR0 >= 150) && (m_ucTMR0 <= 154)){
                     m_ucSteps++;
-                    
+                    m_ucCmd_1++;
                     //GP4 = 1;     
                 }  
                 
                 // 133 center to 1980 microSecs Key >>
                 if((m_ucTMR0 >= 131) && (m_ucTMR0 <= 135)){
                     m_ucSteps++;
+                    m_ucCmd_2++;
 
                     //GP4 = 0;     
                 }  
             }
 
             if(m_ucSteps == 5){//3
-                // 51 center to 760 microSecs Key 
+                // 51 center to 760 microSecs Key << >>
                 if((m_ucTMR0 >= 49) && (m_ucTMR0 <= 53)){
                     m_ucSteps++;      
+                    m_ucCmd_1++;
+                    m_ucCmd_2++;
                 }  
             }
             if(m_ucSteps == 7){//4
                 // 51 center to 760 microSecs Key 
                 if((m_ucTMR0 >= 49) && (m_ucTMR0 <= 53)){
                     m_ucSteps++;
+                    m_ucCmd_1++;
+                    m_ucCmd_2++;
                 }  
             }
             if(m_ucSteps == 9){//5
                 // 79 center to 1170 microSecs Key 
                 if((m_ucTMR0 >= 77) && (m_ucTMR0 <= 81)){
                     m_ucSteps++;
+                    m_ucCmd_1++;
+                    m_ucCmd_2++;
                 }  
             }
             if(m_ucSteps == 11){//6
-                // 51 center to 760 microSecs Key 
-                if((m_ucTMR0 >= 49) && (m_ucTMR0 <= 53)){
-                    m_ucSteps++;
-                 }  
-                // 70 center to 1040 microSecs
+                // 70 center to 1040 microSecs >>
                 if((m_ucTMR0 >= 68) && (m_ucTMR0 <= 72)){// New command
                     m_ucSteps++;
-                    //GP4 = ~GP4;   
+                    m_ucCmd_1++;
                 }                
+                // 51 center to 760 microSecs Key <<
+                if((m_ucTMR0 >= 49) && (m_ucTMR0 <= 53)){
+                    m_ucSteps++;
+                    m_ucCmd_2++;
+                }  
             }
             if(m_ucSteps == 13){//7
                 // 51 center to 760 microSecs Key 
                 if((m_ucTMR0 >= 49) && (m_ucTMR0 <= 53)){
                     m_ucSteps++;
+                    m_ucCmd_1++;
+                    m_ucCmd_2++;
                 }  
             }
             if(m_ucSteps == 15){//8
                 // 51 center to 760 microSecs Key 
                 if((m_ucTMR0 >= 49) && (m_ucTMR0 <= 53)){
                     m_ucSteps++;
-                    m_ucSteps = 0;
-                    GP4 = ~GP4; 
+                    m_ucCmd_1++;
+                    m_ucCmd_2++;
                 }  
             }
         }
         if(GP2){//High
-            if(m_ucSteps >= 0 && m_ucSteps <= 64){                
+            if(m_ucSteps >= 0 && m_ucSteps <= 16){                
                 // 13 center to 198 microSecs
                 if((m_ucTMR0 >= 11) && (m_ucTMR0 <= 15)){
                     m_ucSteps++;
-                    //GP4 = ~GP4;      
                 }     
             }
+            if(m_ucSteps == 17){// End     
+                m_ucSteps = 0;
+                //GP4 = ~GP4;
+                if(m_ucCmd_1 == 8){// >>
+                    GP4 = 1;
+                }
+                if(m_ucCmd_2 == m_ucCmd_1){// <<
+                    //GP4 = 1;
+                }
+                m_ucCmd_1 = 0;
+                m_ucCmd_2 = 0;
+            }  
+            
 /*            
             if(m_ucSteps >= 2 && m_ucSteps <= 64){                
                 // 9 are 562 microSecs
